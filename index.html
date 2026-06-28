@@ -605,345 +605,257 @@ body {
 </footer>
 <script>
 /* ============================================
-   STEP 4: JavaScript — Core Logic
+   DOM Elements ko select kar rahe hain
    ============================================ */
+var inputCode = document.getElementById('inputCode');
+var outputCode = document.getElementById('outputCode');
+var previewArea = document.getElementById('previewArea');
+var loadBtn = document.getElementById('loadBtn');
+var extractBtn = document.getElementById('extractBtn');
+var copyBtn = document.getElementById('copyBtn');
+var downloadBtn = document.getElementById('downloadBtn');
+var clearAllBtn = document.getElementById('clearAllBtn');
+var darkModeToggle = document.getElementById('darkModeToggle');
+var toastContainer = document.getElementById('toastContainer');
+var inputCount = document.getElementById('inputCount');
+var outputCount = document.getElementById('outputCount');
 
-// ============================================
-// DOM Elements ko select kar rahe hain
-// ============================================
-const inputCode = document.getElementById('inputCode');
-const outputCode = document.getElementById('outputCode');
-const previewArea = document.getElementById('previewArea');
-const loadBtn = document.getElementById('loadBtn');
-const extractBtn = document.getElementById('extractBtn');
-const copyBtn = document.getElementById('copyBtn');
-const downloadBtn = document.getElementById('downloadBtn');
-const clearAllBtn = document.getElementById('clearAllBtn');
-const darkModeToggle = document.getElementById('darkModeToggle');
-const toastContainer = document.getElementById('toastContainer');
-const inputCount = document.getElementById('inputCount');
-const outputCount = document.getElementById('outputCount');
-
-// ============================================
-// TOAST NOTIFICATION FUNCTION
-// On-page toast dikhane ke liye — alert ki jagah
-// ============================================
-function showToast(message, type = 'info') {
-  // Naya toast element banao
-  const toast = document.createElement('div');
+/* ============================================
+   TOAST NOTIFICATION FUNCTION
+   ============================================ */
+function showToast(message, type) {
+  type = type || 'info';
+  var toast = document.createElement('div');
   toast.className = 'toast' + (type === 'success' ? ' success' : type === 'warning' ? ' warning' : '');
   toast.textContent = message;
   toastContainer.appendChild(toast);
-
-  // 3 seconds ke baad toast ko remove karo with animation
-  setTimeout(() => {
+  setTimeout(function() {
     toast.classList.add('removing');
-    setTimeout(() => {
+    setTimeout(function() {
       if (toast.parentNode) {
         toast.parentNode.removeChild(toast);
       }
-    }, 400); // Animation duration ke baad remove
+    }, 400);
   }, 3000);
 }
 
-// ============================================
-// CHARACTER & LINE COUNT FUNCTION
-// Real-time count dikhane ke liye
-// ============================================
+/* ============================================
+   CHARACTER aur LINE COUNT FUNCTION
+   ============================================ */
 function updateCount(textarea, countElement) {
-  const text = textarea.value;
-  const chars = text.length;
-  // Lines count — empty ho to 0, warna split karke count
-  const lines = text === '' ? 0 : text.split('\n').length;
-  // Number format with commas
+  var text = textarea.value;
+  var chars = text.length;
+  var lines = text === '' ? 0 : text.split('\n').length;
   countElement.textContent = 'Characters: ' + chars.toLocaleString() + ' | Lines: ' + lines.toLocaleString();
 }
 
-// Input textarea par real-time count
-inputCode.addEventListener('input', function () {
+inputCode.addEventListener('input', function() {
   updateCount(inputCode, inputCount);
 });
 
-// Output textarea par bhi count update (jab code extract ho)
 function updateOutputCount() {
   updateCount(outputCode, outputCount);
 }
 
-// ============================================
-// HTML SANITIZE FUNCTION
-// Script tags aur on-event attributes remove karta hai
-// ============================================
+/* ============================================
+   HTML SANITIZE FUNCTION
+   Ye function script tags aur on-event
+   attributes ko remove karta hai
+   ============================================ */
 function sanitizeHTML(code) {
-  // Step 1: Saari <script>...</script> tags hata do
-  let clean = code.replace(/<script[\s\S]*?<\/script>/gi, '');
-
-  // Step 2: On-event attributes hata do (onclick, onerror, onload etc.)
-  // Double quotes wale
-  clean = clean.replace(/\s*on\w+\s*=\s*"[^"]*"/gi, '');
-  // Single quotes wale
-  clean = clean.replace(/\s*on\w+\s*=\s*'[^']*'/gi, '');
-  // Bina quotes wale
-  clean = clean.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
-
-  return clean;
+  var scriptTagRegex = /<script[\s\S]*?<\/scr/gi;
+  code = code.replace(scriptTagRegex, function() { return ''; });
+  var remainingIpt = /ipt>/gi;
+  code = code.replace(remainingIpt, '');
+  code = code.replace(/\s*on\w+\s*=\s*"[^"]*"/gi, '');
+  code = code.replace(/\s*on\w+\s*=\s*'[^']*'/gi, '');
+  code = code.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
+  return code;
 }
-
-// ============================================
-// IMAGES PAR DOUBLE-CLICK EVENT LAGANE KA FUNCTION
-// Har image par click karne se URL change kar sakte hain
-// ============================================
+   /* ============================================
+   IMAGES PAR DOUBLE-CLICK EVENT
+   Har image par click se URL change hota hai
+   ============================================ */
 function attachImageListeners() {
-  const images = previewArea.querySelectorAll('img');
-  images.forEach(function (img) {
-    // Tooltip lagao taake user ko pata chale
-    img.title = 'Double-click karein image badalne ke liye';
-
-    // Double click event
-    img.addEventListener('dblclick', function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // Current image URL default me dikhao
-      const currentSrc = img.getAttribute('src') || '';
-      const newSrc = prompt('Nayi image ka URL/Link yahan paste karein:', currentSrc);
-
-      // Agar user ne kuch enter kiya aur cancel nahi kiya
-      if (newSrc !== null && newSrc.trim() !== '') {
-        img.setAttribute('src', newSrc.trim());
-        showToast('✅ Image updated successfully!', 'success');
-      }
-      // Agar cancel kiya ya empty chhoda to kuch nahi hoga
-    });
-  });
+  var images = previewArea.querySelectorAll('img');
+  for (var i = 0; i < images.length; i++) {
+    (function(img) {
+      img.title = 'Double-click karein image badalne ke liye';
+      img.addEventListener('dblclick', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var currentSrc = img.getAttribute('src') || '';
+        var newSrc = prompt('Nayi image ka URL/Link yahan paste karein:', currentSrc);
+        if (newSrc !== null && newSrc.trim() !== '') {
+          img.setAttribute('src', newSrc.trim());
+          showToast('Image updated successfully!', 'success');
+        }
+      });
+    })(images[i]);
+  }
 }
 
-// ============================================
-// LOAD VISUAL DATA — Main Load Function
-// Input se code le kar preview me render karta hai
-// ============================================
-loadBtn.addEventListener('click', function () {
-  const rawCode = inputCode.value.trim();
-
-  // Check: Agar textarea khaali hai
+/* ============================================
+   LOAD VISUAL DATA
+   Input se code le kar preview me render karta hai
+   ============================================ */
+loadBtn.addEventListener('click', function() {
+  var rawCode = inputCode.value.trim();
   if (!rawCode) {
-    showToast('⚠️ Pehle HTML code paste karein!', 'warning');
+    showToast('Pehle HTML code paste karein!', 'warning');
     return;
   }
-
-  // Code ko sanitize karo (scripts aur events hata do)
-  const cleanCode = sanitizeHTML(rawCode);
-
-  // Preview area me code inject karo
+  var cleanCode = sanitizeHTML(rawCode);
   previewArea.innerHTML = cleanCode;
-
-  // Content editable on karo
   previewArea.setAttribute('contenteditable', 'true');
-
-  // Images par double-click listeners lagao
   attachImageListeners();
-
-  // Visual feedback — border briefly green ho
   previewArea.classList.add('loaded-success');
-  setTimeout(function () {
+  setTimeout(function() {
     previewArea.classList.remove('loaded-success');
   }, 1500);
-
-  // Preview section tak smooth scroll
   previewArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  // Success toast
-  showToast('✅ Code successfully loaded! Ab text edit karein ya images badlein.', 'success');
+  showToast('Code successfully loaded! Ab text edit karein ya images badlein.', 'success');
 });
 
-// ============================================
-// EXTRACT UPDATED CODE
-// Preview area ka edited HTML code output me daalta hai
-// ============================================
-extractBtn.addEventListener('click', function () {
-  const updatedHTML = previewArea.innerHTML;
-
-  // Check: Agar preview area me sirf placeholder hai ya khaali hai
+/* ============================================
+   EXTRACT UPDATED CODE
+   Preview area ka edited HTML code output me daalta hai
+   ============================================ */
+extractBtn.addEventListener('click', function() {
+  var updatedHTML = previewArea.innerHTML;
   if (!updatedHTML || previewArea.querySelector('.preview-placeholder')) {
-    showToast('⚠️ Pehle code load karein!', 'warning');
+    showToast('Pehle code load karein!', 'warning');
     return;
   }
-
-  // Output textarea me code daal do
   outputCode.value = updatedHTML;
-
-  // Output count update karo
   updateOutputCount();
-
-  // Output section tak smooth scroll
   outputCode.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  // Success toast
-  showToast('✅ Updated code extracted successfully!', 'success');
+  showToast('Updated code extracted successfully!', 'success');
 });
-    // ============================================
-// COPY TO CLIPBOARD
-// Output textarea ka code clipboard par copy karta hai
-// ============================================
-copyBtn.addEventListener('click', function () {
-  const code = outputCode.value.trim();
-
-  // Check: Agar output textarea khaali hai
+   /* ============================================
+   COPY TO CLIPBOARD
+   Output textarea ka code clipboard par copy karta hai
+   ============================================ */
+copyBtn.addEventListener('click', function() {
+  var code = outputCode.value.trim();
   if (!code) {
-    showToast('⚠️ Pehle code extract karein!', 'warning');
+    showToast('Pehle code extract karein!', 'warning');
     return;
   }
-
-  // Clipboard API se copy karo
-  navigator.clipboard.writeText(code).then(function () {
-    // Button ka text temporarily change karo
-    const originalText = copyBtn.textContent;
-    const originalBg = copyBtn.style.background;
-
-    copyBtn.textContent = '✅ Copied!';
+  navigator.clipboard.writeText(code).then(function() {
+    var originalText = copyBtn.textContent;
+    copyBtn.textContent = 'Copied!';
     copyBtn.style.background = '#70960A';
-
-    // 2 seconds baad wapis original state
-    setTimeout(function () {
-      copyBtn.textContent = originalText || '📋 Copy Code';
+    setTimeout(function() {
+      copyBtn.textContent = originalText || 'Copy Code';
       copyBtn.style.background = '';
     }, 2000);
-
-    showToast('✅ Code clipboard par copy ho gaya!', 'success');
-  }).catch(function () {
-    // Fallback method agar clipboard API na chale
+    showToast('Code clipboard par copy ho gaya!', 'success');
+  }).catch(function() {
     outputCode.removeAttribute('readonly');
     outputCode.select();
     document.execCommand('copy');
     outputCode.setAttribute('readonly', true);
-    showToast('✅ Code copy ho gaya! (Fallback method)', 'success');
+    showToast('Code copy ho gaya! (Fallback method)', 'success');
   });
 });
 
-// ============================================
-// DOWNLOAD AS HTML FILE
-// Output ka code .html file ke roop me download karta hai
-// ============================================
-downloadBtn.addEventListener('click', function () {
-  const code = outputCode.value.trim();
-
-  // Check: Agar output textarea khaali hai
+/* ============================================
+   DOWNLOAD AS HTML FILE
+   Output ka code .html file ke roop me download karta hai
+   ============================================ */
+downloadBtn.addEventListener('click', function() {
+  var code = outputCode.value.trim();
   if (!code) {
-    showToast('⚠️ Pehle code extract karein!', 'warning');
+    showToast('Pehle code extract karein!', 'warning');
     return;
   }
-
-  // Blob object banao HTML content se
-  const blob = new Blob([code], { type: 'text/html' });
-
-  // Temporary anchor element banao download ke liye
-  const link = document.createElement('a');
+  var blob = new Blob([code], { type: 'text/html' });
+  var link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = 'edited-page.html'; // Default file name
-
-  // Programmatically click karo download trigger karne ke liye
+  link.download = 'edited-page.html';
   document.body.appendChild(link);
   link.click();
-
-  // Cleanup — anchor hata do aur URL revoke karo
   document.body.removeChild(link);
   URL.revokeObjectURL(link.href);
-
-  showToast('✅ File download ho gayi! (edited-page.html)', 'success');
+  showToast('File download ho gayi! (edited-page.html)', 'success');
 });
 
-// ============================================
-// CLEAR ALL — Sab kuch reset karta hai
-// ============================================
-clearAllBtn.addEventListener('click', function () {
-  // Pehle confirm karo
-  const confirmClear = confirm('Kya aap sab kuch clear karna chahte hain? Saara data mit jayega!');
+/* ============================================
+   CLEAR ALL — Sab kuch reset karta hai
+   ============================================ */
+clearAllBtn.addEventListener('click', function() {
+  var confirmClear = confirm('Kya aap sab kuch clear karna chahte hain? Saara data mit jayega!');
   if (!confirmClear) return;
-
-  // Sab kuch khaali kar do
   inputCode.value = '';
   outputCode.value = '';
   previewArea.innerHTML = '<div class="preview-placeholder">Yahan aapka HTML code visually render hoga...</div>';
   previewArea.removeAttribute('contenteditable');
-
-  // Counts reset karo
   updateCount(inputCode, inputCount);
   updateOutputCount();
-
-  showToast('🗑️ Sab kuch clear ho gaya!', 'success');
+  showToast('Sab kuch clear ho gaya!', 'success');
 });
 
-// ============================================
-// DARK MODE TOGGLE
-// Poora interface dark/light mode me switch karta hai
-// ============================================
-
-// Pehle check karo ke localStorage me preference saved hai ya nahi
+/* ============================================
+   DARK MODE TOGGLE
+   Light aur Dark mode switch karta hai
+   localStorage me save bhi karta hai
+   ============================================ */
 (function loadDarkModePreference() {
-  const savedTheme = localStorage.getItem('arusaid-theme');
+  var savedTheme = localStorage.getItem('arusaid-theme');
   if (savedTheme === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
-    darkModeToggle.textContent = '☀️ Light Mode';
+    darkModeToggle.textContent = 'Light Mode';
   }
 })();
 
-darkModeToggle.addEventListener('click', function () {
-  const currentTheme = document.documentElement.getAttribute('data-theme');
-
+darkModeToggle.addEventListener('click', function() {
+  var currentTheme = document.documentElement.getAttribute('data-theme');
   if (currentTheme === 'dark') {
-    // Light mode par switch karo
     document.documentElement.removeAttribute('data-theme');
-    darkModeToggle.textContent = '🌙 Dark Mode';
+    darkModeToggle.textContent = 'Dark Mode';
     localStorage.setItem('arusaid-theme', 'light');
-    showToast('☀️ Light mode activated!', 'success');
+    showToast('Light mode activated!', 'success');
   } else {
-    // Dark mode par switch karo
     document.documentElement.setAttribute('data-theme', 'dark');
-    darkModeToggle.textContent = '☀️ Light Mode';
+    darkModeToggle.textContent = 'Light Mode';
     localStorage.setItem('arusaid-theme', 'dark');
-    showToast('🌙 Dark mode activated!', 'success');
+    showToast('Dark mode activated!', 'success');
   }
 });
 
-// ============================================
-// KEYBOARD SHORTCUT: Ctrl+S
-// Code extract aur download ek sath karta hai
-// ============================================
-document.addEventListener('keydown', function (e) {
+/* ============================================
+   KEYBOARD SHORTCUT: Ctrl+S
+   Code extract aur download ek sath karta hai
+   ============================================ */
+document.addEventListener('keydown', function(e) {
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-    // Browser ka default save dialog rok do
     e.preventDefault();
-
-    // Pehle code extract karo
-    const updatedHTML = previewArea.innerHTML;
+    var updatedHTML = previewArea.innerHTML;
     if (!updatedHTML || previewArea.querySelector('.preview-placeholder')) {
-      showToast('⚠️ Pehle code load karein! (Ctrl+S)', 'warning');
+      showToast('Pehle code load karein! (Ctrl+S)', 'warning');
       return;
     }
-
-    // Output me daal do
     outputCode.value = updatedHTML;
     updateOutputCount();
-
-    // Phir download trigger karo
-    const blob = new Blob([updatedHTML], { type: 'text/html' });
-    const link = document.createElement('a');
+    var blob = new Blob([updatedHTML], { type: 'text/html' });
+    var link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'edited-page.html';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
-
-    showToast('✅ Ctrl+S: Code extracted aur download ho gaya!', 'success');
+    showToast('Ctrl+S: Code extracted aur download ho gaya!', 'success');
   }
 });
 
-// ============================================
-// PAGE LOAD PAR Initial Count Set Karo
-// ============================================
+/* ============================================
+   PAGE LOAD PAR Initial Count Set Karo
+   ============================================ */
 updateCount(inputCode, inputCount);
 updateOutputCount();
-
+ 
 </script>
 </body>
 </html>
