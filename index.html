@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARUSAID — Visual HTML Data Editor</title>
+<style>
+/* ============================================
+   STEP 1: CSS Variables aur Base Styles
+   ============================================ */
+
+/* Root me saare colors define — poore tool me yehi use honge */
+:root {
+  --primary-dark: #091F5C;
+  --primary-medium: #334DAF;
+  --accent-green: #70960A;
+  --light-blue: #D0E4FE;
+  --lighter-blue: #E8F2FE;
+  --lightest-bg: #F9FBFF;
+  --white: #FFFFFF;
+  --shadow-blue: rgba(51, 77, 175, 0.3);
+  --shadow-dark: rgba(9, 31, 92, 0.1);
+  --toast-duration: 3s;
+}
+
+/* Dark mode ke colors */
+[data-theme="dark"] {
+  --primary-dark: #0a0a1a;
+  --lightest-bg: #0a0a1a;
+  --lighter-blue: #121230;
+  --light-blue: #1a1a3e;
+  --white: #1e1e3f;
+  --shadow-dark: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] body {
+  background: #0a0a1a;
+  color: #E8F2FE;
+}
+
+[data-theme="dark"] .section-heading {
+  color: #E8F2FE;
+}
+
+[data-theme="dark"] .sub-heading {
+  color: #8899cc;
+}
+
+[data-theme="dark"] #inputCode {
+  background: #121230;
+  color: #E8F2FE;
+  border-color: #334DAF;
+}
+
+[data-theme="dark"] #outputCode {
+  background: #1a1a3e;
+  color: #E8F2FE;
+  border-color: #334DAF;
+}
+
+[data-theme="dark"] #previewArea {
+  background: #1e1e3f;
+  color: #E8F2FE;
+  border-color: #334DAF;
+}
+
+[data-theme="dark"] .container {
+  background: transparent;
+}
+
+[data-theme="dark"] .char-count {
+  color: #8899cc;
+}
+
+[data-theme="dark"] .section-card {
+  background: #121230;
+  border-color: #334DAF;
+}
+
+/* Reset aur base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--lightest-bg);
+  color: var(--primary-dark);
+  line-height: 1.6;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Main Container — centered layout */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 25px 40px;
+}
+
+/* Section Cards — har component ke around */
+.section-card {
+  background: var(--white);
+  border: 1px solid var(--light-blue);
+  border-radius: 14px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 12px var(--shadow-dark);
+  transition: all 0.3s ease;
+}
+
+.section-card:hover {
+  box-shadow: 0 4px 20px var(--shadow-blue);
+}
+
+/* Section Headings */
+.section-heading {
+  font-size: 20px;
+  font-weight: 700;
+  color: #091F5C;
+  margin-bottom: 15px;
+}
+
+.sub-heading {
+  font-size: 14px;
+  color: #334DAF;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+/* ============================================
+   HEADER STYLES
+   ============================================ */
+.header {
+  background: #091F5C;
+  padding: 18px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(9, 31, 92, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-left h1 {
+  color: var(--white);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.header-left .tagline {
+  color: var(--light-blue);
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.header-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+  /* ============================================
+   TEXTAREA STYLES (Input & Output dono ke liye)
+   ============================================ */
+.code-textarea {
+  width: 100%;
+  min-height: 250px;
+  resize: vertical;
+  background: var(--lightest-bg);
+  border: 2px solid var(--light-blue);
+  border-radius: 10px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  padding: 15px;
+  color: #091F5C;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  line-height: 1.5;
+}
+
+.code-textarea:focus {
+  border-color: #334DAF;
+  box-shadow: 0 0 0 3px rgba(51, 77, 175, 0.15);
+}
+
+/* Output textarea — different background */
+.code-textarea.output {
+  background: var(--lighter-blue);
+}
+
+/* Character aur Line count display */
+.char-count {
+  font-size: 12px;
+  color: #334DAF;
+  margin-top: 8px;
+  font-weight: 500;
+  text-align: right;
+}
+
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+
+/* Common button styling */
+.btn {
+  color: white;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.3px;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+/* Load Button */
+.btn-load {
+  background: #334DAF;
+  box-shadow: 0 4px 10px rgba(51, 77, 175, 0.3);
+  font-size: 16px;
+  padding: 12px 30px;
+  margin-top: 15px;
+}
+
+.btn-load:hover {
+  background: #091F5C;
+  box-shadow: 0 6px 15px rgba(9, 31, 92, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Extract Button */
+.btn-extract {
+  background: #334DAF;
+  box-shadow: 0 4px 10px rgba(51, 77, 175, 0.3);
+}
+
+.btn-extract:hover {
+  background: #1a3399;
+  box-shadow: 0 6px 15px rgba(51, 77, 175, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Copy Button */
+.btn-copy {
+  background: #70960A;
+  box-shadow: 0 4px 10px rgba(112, 150, 10, 0.3);
+}
+
+.btn-copy:hover {
+  background: #5a7a08;
+  box-shadow: 0 6px 15px rgba(112, 150, 10, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Download Button */
+.btn-download {
+  background: #091F5C;
+  box-shadow: 0 4px 10px rgba(9, 31, 92, 0.3);
+}
+
+.btn-download:hover {
+  background: #060f33;
+  box-shadow: 0 6px 15px rgba(9, 31, 92, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Buttons Row — flexbox layout */
+.buttons-row {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+
+/* ============================================
+   PREVIEW AREA STYLES
+   ============================================ */
+#previewArea {
+  width: 100%;
+  min-height: 400px;
+  border: 3px dashed #334DAF;
+  border-radius: 12px;
+  background: #FFFFFF;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 2px 15px rgba(9, 31, 92, 0.1);
+  transition: border-color 0.5s ease, box-shadow 0.3s ease;
+  cursor: text;
+  word-wrap: break-word;
+}
+
+/* Preview area ke andar images par hover effect */
+#previewArea img {
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border 0.3s ease, transform 0.3s ease;
+  max-width: 100%;
+  height: auto;
+}
+
+#previewArea img:hover {
+  border: 2px solid #334DAF;
+  transform: scale(1.02);
+}
+
+/* Placeholder text jab preview empty ho */
+.preview-placeholder {
+  color: #999;
+  text-align: center;
+  font-style: italic;
+  padding-top: 150px;
+  font-size: 16px;
+  user-select: none;
+}
+
+/* Preview area ka success state (jab code load ho) */
+#previewArea.loaded-success {
+  border-color: #70960A;
+  box-shadow: 0 0 20px rgba(112, 150, 10, 0.2);
+}
+
+/* ============================================
+   TOAST NOTIFICATION STYLES
+   ============================================ */
+.toast-container {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  background: #091F5C;
+  color: white;
+  padding: 12px 22px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(9, 31, 92, 0.4);
+  animation: slideInToast 0.4s ease forwards;
+  max-width: 350px;
+  word-wrap: break-word;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast.success {
+  background: #70960A;
+}
+
+.toast.warning {
+  background: #c0860a;
+}
+
+.toast.removing {
+  animation: slideOutToast 0.4s ease forwards;
+}
+
+@keyframes slideInToast {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToast {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
+/* ============================================
+   FOOTER STYLES
+   ============================================ */
+.footer {
+  background: #091F5C;
+  color: #D0E4FE;
+  text-align: center;
+  padding: 15px;
+  font-size: 13px;
+  margin-top: 0;
+  letter-spacing: 0.3px;
+}
+
+.footer span {
+  color: #ff6b6b;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+    padding: 15px 20px;
+  }
+
+  .header-left h1 {
+    font-size: 20px;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .container {
+    padding: 15px;
+  }
+
+  .section-card {
+    padding: 18px;
+  }
+
+  .section-heading {
+    font-size: 17px;
+  }
+
+  .buttons-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn {
+    justify-content: center;
+    font-size: 14px;
+    padding: 12px 20px;
+  }
+
+  .code-textarea {
+    font-size: 12px;
+    min-height: 200px;
+  }
+
+  #previewArea {
+    min-height: 300px;
+    padding: 15px;
+  }
+
+  .toast {
+    max-width: 280px;
+    font-size: 13px;
+    right: 10px;
+  }
+
+  .toast-container {
+    right: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-left h1 {
+    font-size: 18px;
+  }
+
+  .header-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .section-heading {
+    font-size: 15px;
+  }
+
+  .btn {
+    font-size: 13px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     HEADER / TOP BAR
+     ============================================ -->
+<header class="header">
+  <div class="header-left">
+    <h1>🛠️ ARUSAID</h1>
+    <div class="tagline">Paste, Edit Visually, Extract Clean Code</div>
+  </div>
+  <div class="header-right">
+    <!-- Dark Mode Toggle Button -->
+    <button class="header-btn" id="darkModeToggle" title="Toggle Dark Mode">🌙 Dark Mode</button>
+    <!-- Clear All Button -->
+    <button class="header-btn" id="clearAllBtn" title="Sab kuch clear karo">🗑️ Clear All</button>
+  </div>
+</header>
+
+<!-- Toast Notifications Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Main Container -->
+<div class="container">
+
+  <!-- ==========================================
+       COMPONENT 1: INPUT TEXTAREA — Code Paste Area
+       ========================================== -->
+  <div class="section-card">
+    <h2 class="section-heading">📋 Paste Your HTML CSS JavaScript Code Here</h2>
+    <p class="sub-heading">Apni website ka complete single file code niche paste karein:</p>
+    <textarea
+      class="code-textarea"
+      id="inputCode"
+      placeholder="Apni website ka single file HTML/CSS/JS code yahan paste karein..."
+      spellcheck="false"
+    ></textarea>
+    <div class="char-count" id="inputCount">Characters: 0 | Lines: 0</div>
+
+    <!-- Load Button -->
+    <button class="btn btn-load" id="loadBtn">🚀 Load Visual Data</button>
+  </div>
+
+  <!-- ==========================================
+       COMPONENT 3: PREVIEW AREA — Visual Rendering Box
+       ========================================== -->
+  <div class="section-card">
+    <h2 class="section-heading">👁️ Live Visual Preview</h2>
+    <p class="sub-heading">Click to Edit Text | Double-Click on Images to Change Them</p>
+    <div id="previewArea">
+      <div class="preview-placeholder">Yahan aapka HTML code visually render hoga...</div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       COMPONENT 4: ACTION BUTTONS ROW
+       ========================================== -->
+  <div class="section-card">
+    <div class="buttons-row">
+      <button class="btn btn-extract" id="extractBtn">📤 Extract Updated Code</button>
+      <button class="btn btn-copy" id="copyBtn">📋 Copy Code</button>
+      <button class="btn btn-download" id="downloadBtn">💾 Download HTML File</button>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       COMPONENT 5: OUTPUT TEXTAREA — Extracted Code
+       ========================================== -->
+  <div class="section-card">
+    <h2 class="section-heading">📝 Your Updated HTML Code</h2>
+    <p class="sub-heading">Ye code edit hone ke baad ka updated/clean HTML hai:</p>
+    <textarea
+      class="code-textarea output"
+      id="outputCode"
+      placeholder="Yahan aapka updated code aayega..."
+      readonly
+      spellcheck="false"
+    ></textarea>
+    <div class="char-count" id="outputCount">Characters: 0 | Lines: 0</div>
+  </div>
+
+</div>
+<!-- End Container -->
+
+<!-- ============================================
+     FOOTER
+     ============================================ -->
+<footer class="footer">
+  ARUSAID — Visual HTML Data Editor — Built with <span>❤️</span> | No Framework Used | Pure HTML, CSS & JavaScript
+</footer>
+<script>
+/* ============================================
+   STEP 4: JavaScript — Core Logic
+   ============================================ */
+
+// ============================================
+// DOM Elements ko select kar rahe hain
+// ============================================
+const inputCode = document.getElementById('inputCode');
+const outputCode = document.getElementById('outputCode');
+const previewArea = document.getElementById('previewArea');
+const loadBtn = document.getElementById('loadBtn');
+const extractBtn = document.getElementById('extractBtn');
+const copyBtn = document.getElementById('copyBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const clearAllBtn = document.getElementById('clearAllBtn');
+const darkModeToggle = document.getElementById('darkModeToggle');
+const toastContainer = document.getElementById('toastContainer');
+const inputCount = document.getElementById('inputCount');
+const outputCount = document.getElementById('outputCount');
+
+// ============================================
+// TOAST NOTIFICATION FUNCTION
+// On-page toast dikhane ke liye — alert ki jagah
+// ============================================
+function showToast(message, type = 'info') {
+  // Naya toast element banao
+  const toast = document.createElement('div');
+  toast.className = 'toast' + (type === 'success' ? ' success' : type === 'warning' ? ' warning' : '');
+  toast.textContent = message;
+  toastContainer.appendChild(toast);
+
+  // 3 seconds ke baad toast ko remove karo with animation
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 400); // Animation duration ke baad remove
+  }, 3000);
+}
+
+// ============================================
+// CHARACTER & LINE COUNT FUNCTION
+// Real-time count dikhane ke liye
+// ============================================
+function updateCount(textarea, countElement) {
+  const text = textarea.value;
+  const chars = text.length;
+  // Lines count — empty ho to 0, warna split karke count
+  const lines = text === '' ? 0 : text.split('\n').length;
+  // Number format with commas
+  countElement.textContent = 'Characters: ' + chars.toLocaleString() + ' | Lines: ' + lines.toLocaleString();
+}
+
+// Input textarea par real-time count
+inputCode.addEventListener('input', function () {
+  updateCount(inputCode, inputCount);
+});
+
+// Output textarea par bhi count update (jab code extract ho)
+function updateOutputCount() {
+  updateCount(outputCode, outputCount);
+}
+
+// ============================================
+// HTML SANITIZE FUNCTION
+// Script tags aur on-event attributes remove karta hai
+// ============================================
+function sanitizeHTML(code) {
+  // Step 1: Saari <script>...</script> tags hata do
+  let clean = code.replace(/<script[\s\S]*?<\/script>/gi, '');
+
+  // Step 2: On-event attributes hata do (onclick, onerror, onload etc.)
+  // Double quotes wale
+  clean = clean.replace(/\s*on\w+\s*=\s*"[^"]*"/gi, '');
+  // Single quotes wale
+  clean = clean.replace(/\s*on\w+\s*=\s*'[^']*'/gi, '');
+  // Bina quotes wale
+  clean = clean.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
+
+  return clean;
+}
+
+// ============================================
+// IMAGES PAR DOUBLE-CLICK EVENT LAGANE KA FUNCTION
+// Har image par click karne se URL change kar sakte hain
+// ============================================
+function attachImageListeners() {
+  const images = previewArea.querySelectorAll('img');
+  images.forEach(function (img) {
+    // Tooltip lagao taake user ko pata chale
+    img.title = 'Double-click karein image badalne ke liye';
+
+    // Double click event
+    img.addEventListener('dblclick', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Current image URL default me dikhao
+      const currentSrc = img.getAttribute('src') || '';
+      const newSrc = prompt('Nayi image ka URL/Link yahan paste karein:', currentSrc);
+
+      // Agar user ne kuch enter kiya aur cancel nahi kiya
+      if (newSrc !== null && newSrc.trim() !== '') {
+        img.setAttribute('src', newSrc.trim());
+        showToast('✅ Image updated successfully!', 'success');
+      }
+      // Agar cancel kiya ya empty chhoda to kuch nahi hoga
+    });
+  });
+}
+
+// ============================================
+// LOAD VISUAL DATA — Main Load Function
+// Input se code le kar preview me render karta hai
+// ============================================
+loadBtn.addEventListener('click', function () {
+  const rawCode = inputCode.value.trim();
+
+  // Check: Agar textarea khaali hai
+  if (!rawCode) {
+    showToast('⚠️ Pehle HTML code paste karein!', 'warning');
+    return;
+  }
+
+  // Code ko sanitize karo (scripts aur events hata do)
+  const cleanCode = sanitizeHTML(rawCode);
+
+  // Preview area me code inject karo
+  previewArea.innerHTML = cleanCode;
+
+  // Content editable on karo
+  previewArea.setAttribute('contenteditable', 'true');
+
+  // Images par double-click listeners lagao
+  attachImageListeners();
+
+  // Visual feedback — border briefly green ho
+  previewArea.classList.add('loaded-success');
+  setTimeout(function () {
+    previewArea.classList.remove('loaded-success');
+  }, 1500);
+
+  // Preview section tak smooth scroll
+  previewArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Success toast
+  showToast('✅ Code successfully loaded! Ab text edit karein ya images badlein.', 'success');
+});
+
+// ============================================
+// EXTRACT UPDATED CODE
+// Preview area ka edited HTML code output me daalta hai
+// ============================================
+extractBtn.addEventListener('click', function () {
+  const updatedHTML = previewArea.innerHTML;
+
+  // Check: Agar preview area me sirf placeholder hai ya khaali hai
+  if (!updatedHTML || previewArea.querySelector('.preview-placeholder')) {
+    showToast('⚠️ Pehle code load karein!', 'warning');
+    return;
+  }
+
+  // Output textarea me code daal do
+  outputCode.value = updatedHTML;
+
+  // Output count update karo
+  updateOutputCount();
+
+  // Output section tak smooth scroll
+  outputCode.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Success toast
+  showToast('✅ Updated code extracted successfully!', 'success');
+});
+    // ============================================
+// COPY TO CLIPBOARD
+// Output textarea ka code clipboard par copy karta hai
+// ============================================
+copyBtn.addEventListener('click', function () {
+  const code = outputCode.value.trim();
+
+  // Check: Agar output textarea khaali hai
+  if (!code) {
+    showToast('⚠️ Pehle code extract karein!', 'warning');
+    return;
+  }
+
+  // Clipboard API se copy karo
+  navigator.clipboard.writeText(code).then(function () {
+    // Button ka text temporarily change karo
+    const originalText = copyBtn.textContent;
+    const originalBg = copyBtn.style.background;
+
+    copyBtn.textContent = '✅ Copied!';
+    copyBtn.style.background = '#70960A';
+
+    // 2 seconds baad wapis original state
+    setTimeout(function () {
+      copyBtn.textContent = originalText || '📋 Copy Code';
+      copyBtn.style.background = '';
+    }, 2000);
+
+    showToast('✅ Code clipboard par copy ho gaya!', 'success');
+  }).catch(function () {
+    // Fallback method agar clipboard API na chale
+    outputCode.removeAttribute('readonly');
+    outputCode.select();
+    document.execCommand('copy');
+    outputCode.setAttribute('readonly', true);
+    showToast('✅ Code copy ho gaya! (Fallback method)', 'success');
+  });
+});
+
+// ============================================
+// DOWNLOAD AS HTML FILE
+// Output ka code .html file ke roop me download karta hai
+// ============================================
+downloadBtn.addEventListener('click', function () {
+  const code = outputCode.value.trim();
+
+  // Check: Agar output textarea khaali hai
+  if (!code) {
+    showToast('⚠️ Pehle code extract karein!', 'warning');
+    return;
+  }
+
+  // Blob object banao HTML content se
+  const blob = new Blob([code], { type: 'text/html' });
+
+  // Temporary anchor element banao download ke liye
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'edited-page.html'; // Default file name
+
+  // Programmatically click karo download trigger karne ke liye
+  document.body.appendChild(link);
+  link.click();
+
+  // Cleanup — anchor hata do aur URL revoke karo
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+
+  showToast('✅ File download ho gayi! (edited-page.html)', 'success');
+});
+
+// ============================================
+// CLEAR ALL — Sab kuch reset karta hai
+// ============================================
+clearAllBtn.addEventListener('click', function () {
+  // Pehle confirm karo
+  const confirmClear = confirm('Kya aap sab kuch clear karna chahte hain? Saara data mit jayega!');
+  if (!confirmClear) return;
+
+  // Sab kuch khaali kar do
+  inputCode.value = '';
+  outputCode.value = '';
+  previewArea.innerHTML = '<div class="preview-placeholder">Yahan aapka HTML code visually render hoga...</div>';
+  previewArea.removeAttribute('contenteditable');
+
+  // Counts reset karo
+  updateCount(inputCode, inputCount);
+  updateOutputCount();
+
+  showToast('🗑️ Sab kuch clear ho gaya!', 'success');
+});
+
+// ============================================
+// DARK MODE TOGGLE
+// Poora interface dark/light mode me switch karta hai
+// ============================================
+
+// Pehle check karo ke localStorage me preference saved hai ya nahi
+(function loadDarkModePreference() {
+  const savedTheme = localStorage.getItem('arusaid-theme');
+  if (savedTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    darkModeToggle.textContent = '☀️ Light Mode';
+  }
+})();
+
+darkModeToggle.addEventListener('click', function () {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+
+  if (currentTheme === 'dark') {
+    // Light mode par switch karo
+    document.documentElement.removeAttribute('data-theme');
+    darkModeToggle.textContent = '🌙 Dark Mode';
+    localStorage.setItem('arusaid-theme', 'light');
+    showToast('☀️ Light mode activated!', 'success');
+  } else {
+    // Dark mode par switch karo
+    document.documentElement.setAttribute('data-theme', 'dark');
+    darkModeToggle.textContent = '☀️ Light Mode';
+    localStorage.setItem('arusaid-theme', 'dark');
+    showToast('🌙 Dark mode activated!', 'success');
+  }
+});
+
+// ============================================
+// KEYBOARD SHORTCUT: Ctrl+S
+// Code extract aur download ek sath karta hai
+// ============================================
+document.addEventListener('keydown', function (e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    // Browser ka default save dialog rok do
+    e.preventDefault();
+
+    // Pehle code extract karo
+    const updatedHTML = previewArea.innerHTML;
+    if (!updatedHTML || previewArea.querySelector('.preview-placeholder')) {
+      showToast('⚠️ Pehle code load karein! (Ctrl+S)', 'warning');
+      return;
+    }
+
+    // Output me daal do
+    outputCode.value = updatedHTML;
+    updateOutputCount();
+
+    // Phir download trigger karo
+    const blob = new Blob([updatedHTML], { type: 'text/html' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'edited-page.html';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+
+    showToast('✅ Ctrl+S: Code extracted aur download ho gaya!', 'success');
+  }
+});
+
+// ============================================
+// PAGE LOAD PAR Initial Count Set Karo
+// ============================================
+updateCount(inputCode, inputCount);
+updateOutputCount();
+
+</script>
+</body>
+</html>
