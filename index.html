@@ -855,7 +855,88 @@ document.addEventListener('keydown', function(e) {
    ============================================ */
 updateCount(inputCode, inputCount);
 updateOutputCount();
- 
+ /* ============================================
+   AUTO SAVE — localStorage me data save karta hai
+   Refresh karne par bhi sab kuch wapis aaye
+   ============================================ */
+
+// Save function — har change par data localStorage me save hoga
+function saveAllData() {
+  var dataToSave = {
+    inputValue: inputCode.value,
+    outputValue: outputCode.value,
+    previewHTML: previewArea.innerHTML,
+    isEditable: previewArea.getAttribute('contenteditable')
+  };
+  localStorage.setItem('arusaid-saved-data', JSON.stringify(dataToSave));
+}
+
+// Restore function — page load par data wapis lata hai
+function restoreAllData() {
+  var saved = localStorage.getItem('arusaid-saved-data');
+  if (!saved) return;
+
+  try {
+    var data = JSON.parse(saved);
+
+    if (data.inputValue) {
+      inputCode.value = data.inputValue;
+      updateCount(inputCode, inputCount);
+    }
+
+    if (data.outputValue) {
+      outputCode.value = data.outputValue;
+      updateOutputCount();
+    }
+
+    if (data.previewHTML && data.previewHTML.indexOf('preview-placeholder') === -1) {
+      previewArea.innerHTML = data.previewHTML;
+      previewArea.setAttribute('contenteditable', 'true');
+      attachImageListeners();
+    }
+
+    showToast('Data restored from last session!', 'success');
+  } catch(e) {
+    // Agar koi error aaye to ignore karo
+  }
+}
+
+// Page load par data restore karo
+restoreAllData();
+
+// Input textarea me kuch likhe ya paste kare to save ho
+inputCode.addEventListener('input', function() {
+  saveAllData();
+});
+
+// Preview area me kuch edit kare to save ho
+previewArea.addEventListener('input', function() {
+  saveAllData();
+});
+
+// Jab Load button click ho to save ho
+loadBtn.addEventListener('click', function() {
+  setTimeout(saveAllData, 500);
+});
+
+// Jab Extract button click ho to save ho
+extractBtn.addEventListener('click', function() {
+  setTimeout(saveAllData, 500);
+});
+
+// Jab page band ho raha ho tab bhi save karo
+window.addEventListener('beforeunload', function() {
+  saveAllData();
+});
+
+// Clear All me localStorage bhi clear karo
+var originalClearHandler = clearAllBtn.onclick;
+clearAllBtn.addEventListener('click', function() {
+  setTimeout(function() {
+    localStorage.removeItem('arusaid-saved-data');
+  }, 100);
+});
+   
 </script>
 </body>
 </html>
