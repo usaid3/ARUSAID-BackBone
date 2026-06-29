@@ -721,24 +721,27 @@ body {
 <!-- Main Container -->
 <div class="container">
 
-  <!-- ==========================================
+<!-- ==========================================
        COMPONENT 1: INPUT TEXTAREA — Code Paste Area
        ========================================== -->
   <div class="section-card">
     <h2 class="section-heading">📋 Paste Your HTML CSS JavaScript Code Here</h2>
     <p class="sub-heading">Apni website ka complete single file code niche paste karein ya file upload karein:</p>
 
-<!-- File Upload Area -->
-<div class="file-upload-area" id="fileUploadArea">
-  <div class="file-upload-inner" id="fileDropZone">
-    <div class="file-upload-icon">📁</div>
-    <p class="file-upload-text">index.html file yahan drag & drop karein</p>
-    <p class="file-upload-or">— ya —</p>
-    <label class="btn btn-file-upload" for="fileInput">📂 File Choose Karein</label>
-    <input type="file" id="fileInput" accept=".html,.htm,.txt" hidden>
-    <p class="file-upload-info" id="fileInfo">Supported: .html, .htm, .txt</p>
-  </div>
-</div>
+    <!-- File Upload Area -->
+    <div class="file-upload-area" id="fileUploadArea">
+      <div class="file-upload-inner" id="fileDropZone">
+        <div class="file-upload-icon">📁</div>
+        <p class="file-upload-text">index.html file yahan drag & drop karein</p>
+        <p class="file-upload-or">— ya —</p>
+        <label class="btn btn-file-upload" for="fileInput">📂 File Choose Karein</label>
+        <input type="file" id="fileInput" accept=".html,.htm,.txt" hidden>
+        <p class="file-upload-info" id="fileInfo">Supported: .html, .htm, .txt</p>
+      </div>
+    </div>
+
+    <!-- Textarea — YE LINE MISSING THI -->
+    <textarea
       class="code-textarea"
       id="inputCode"
       placeholder="Apni website ka single file HTML/CSS/JS code yahan paste karein..."
@@ -756,18 +759,20 @@ body {
   <div class="section-card">
     <h2 class="section-heading">👁️ Live Visual Preview</h2>
     <p class="sub-heading">Click to Edit Text | Double-Click on Images to Change Them</p>
-  <div id="previewWrapper">
-  <div class="preview-toolbar">
-    <button class="preview-tool-btn active" id="desktopViewBtn" title="Desktop View">🖥️ Desktop</button>
-    <button class="preview-tool-btn" id="tabletViewBtn" title="Tablet View">📱 Tablet</button>
-    <button class="preview-tool-btn" id="mobileViewBtn" title="Mobile View">📲 Mobile</button>
-    <button class="preview-tool-btn" id="editModeBtn" title="Edit Mode ON/OFF">✏️ Edit Mode: OFF</button>
-  </div>
-  <div id="previewContainer">
-    <iframe id="previewFrame" sandbox="allow-same-origin" title="Live Preview"></iframe>
-    <div class="preview-placeholder" id="previewPlaceholder">Yahan aapka HTML code visually render hoga...</div>
-  </div>
-  <div id="previewArea" style="display:none;"></div>
+
+    <div id="previewWrapper">
+      <div class="preview-toolbar">
+        <button class="preview-tool-btn active" id="desktopViewBtn" title="Desktop View">🖥️ Desktop</button>
+        <button class="preview-tool-btn" id="tabletViewBtn" title="Tablet View">📱 Tablet</button>
+        <button class="preview-tool-btn" id="mobileViewBtn" title="Mobile View">📲 Mobile</button>
+        <button class="preview-tool-btn" id="editModeBtn" title="Edit Mode ON/OFF">✏️ Edit Mode: OFF</button>
+      </div>
+      <div id="previewContainer">
+        <iframe id="previewFrame" sandbox="allow-same-origin" title="Live Preview"></iframe>
+        <div class="preview-placeholder" id="previewPlaceholder">Yahan aapka HTML code visually render hoga...</div>
+      </div>
+      <div id="previewArea" style="display:none;"></div>
+    </div>
   </div>
 
   <!-- ==========================================
