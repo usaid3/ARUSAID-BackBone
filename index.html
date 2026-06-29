@@ -302,52 +302,138 @@ body {
   margin-top: 5px;
 }
 
-/* ============================================
-   PREVIEW AREA STYLES
+   /* ============================================
+   PREVIEW WRAPPER & IFRAME STYLES
    ============================================ */
-#previewArea {
+#previewWrapper {
   width: 100%;
-  min-height: 400px;
+}
+
+.preview-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.preview-tool-btn {
+  background: var(--lighter-blue);
+  color: #091F5C;
+  border: 2px solid var(--light-blue);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.preview-tool-btn:hover {
+  background: var(--light-blue);
+  border-color: #334DAF;
+}
+
+.preview-tool-btn.active {
+  background: #334DAF;
+  color: white;
+  border-color: #334DAF;
+}
+
+#previewContainer {
+  position: relative;
+  width: 100%;
+  min-height: 500px;
   border: 3px dashed #334DAF;
   border-radius: 12px;
   background: #FFFFFF;
-  padding: 20px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   box-shadow: 0 2px 15px rgba(9, 31, 92, 0.1);
-  transition: border-color 0.5s ease, box-shadow 0.3s ease;
-  cursor: text;
-  word-wrap: break-word;
+  transition: all 0.5s ease;
+  display: flex;
+  justify-content: center;
 }
 
-/* Preview area ke andar images par hover effect */
-#previewArea img {
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: border 0.3s ease, transform 0.3s ease;
+#previewFrame {
+  width: 100%;
+  height: 600px;
+  border: none;
+  background: white;
+  display: none;
+  transition: all 0.3s ease;
+}
+
+#previewContainer.tablet-view {
+  max-width: 768px;
+  margin: 0 auto;
+}
+
+#previewContainer.mobile-view {
+  max-width: 375px;
+  margin: 0 auto;
+}
+
+#previewContainer.desktop-view {
   max-width: 100%;
-  height: auto;
 }
 
-#previewArea img:hover {
-  border: 2px solid #334DAF;
-  transform: scale(1.02);
+#previewContainer.loaded-success {
+  border-color: #70960A;
+  box-shadow: 0 0 20px rgba(112, 150, 10, 0.2);
 }
 
-/* Placeholder text jab preview empty ho */
 .preview-placeholder {
   color: #999;
   text-align: center;
   font-style: italic;
-  padding-top: 150px;
+  padding-top: 200px;
+  padding-bottom: 200px;
   font-size: 16px;
   user-select: none;
+  width: 100%;
 }
 
-/* Preview area ka success state (jab code load ho) */
-#previewArea.loaded-success {
+.preview-tool-btn.edit-active {
+  background: #70960A;
+  color: white;
   border-color: #70960A;
-  box-shadow: 0 0 20px rgba(112, 150, 10, 0.2);
+}
+
+/* Dark mode support */
+[data-theme="dark"] #previewContainer {
+  background: #1e1e3f;
+  border-color: #334DAF;
+}
+
+[data-theme="dark"] .preview-tool-btn {
+  background: #121230;
+  color: #E8F2FE;
+  border-color: #334DAF;
+}
+
+[data-theme="dark"] .preview-tool-btn:hover {
+  background: #1a1a4e;
+}
+
+[data-theme="dark"] .preview-tool-btn.active {
+  background: #334DAF;
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  #previewFrame {
+    height: 450px;
+  }
+
+  .preview-toolbar {
+    justify-content: center;
+  }
+
+  .preview-tool-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
 }
 
 /* ============================================
@@ -670,9 +756,19 @@ body {
   <div class="section-card">
     <h2 class="section-heading">👁️ Live Visual Preview</h2>
     <p class="sub-heading">Click to Edit Text | Double-Click on Images to Change Them</p>
-    <div id="previewArea">
-      <div class="preview-placeholder">Yahan aapka HTML code visually render hoga...</div>
-    </div>
+  <div id="previewWrapper">
+  <div class="preview-toolbar">
+    <button class="preview-tool-btn active" id="desktopViewBtn" title="Desktop View">🖥️ Desktop</button>
+    <button class="preview-tool-btn" id="tabletViewBtn" title="Tablet View">📱 Tablet</button>
+    <button class="preview-tool-btn" id="mobileViewBtn" title="Mobile View">📲 Mobile</button>
+    <button class="preview-tool-btn" id="editModeBtn" title="Edit Mode ON/OFF">✏️ Edit Mode: OFF</button>
+  </div>
+  <div id="previewContainer">
+    <iframe id="previewFrame" sandbox="allow-same-origin" title="Live Preview"></iframe>
+    <div class="preview-placeholder" id="previewPlaceholder">Yahan aapka HTML code visually render hoga...</div>
+  </div>
+  <div id="previewArea" style="display:none;"></div>
+  </div>
   </div>
 
   <!-- ==========================================
@@ -913,25 +1009,158 @@ function attachImageListeners() {
 }
 
 /* ============================================
-   LOAD VISUAL DATA
-   Input se code le kar preview me render karta hai
+   PREVIEW SYSTEM — iframe + Edit Mode
+   Poori website as it is render karta hai
    ============================================ */
+
+var previewFrame = document.getElementById('previewFrame');
+var previewContainer = document.getElementById('previewContainer');
+var previewPlaceholder = document.getElementById('previewPlaceholder');
+var desktopViewBtn = document.getElementById('desktopViewBtn');
+var tabletViewBtn = document.getElementById('tabletViewBtn');
+var mobileViewBtn = document.getElementById('mobileViewBtn');
+var editModeBtn = document.getElementById('editModeBtn');
+var isEditMode = false;
+var currentRawCode = '';
+
+// iframe me poora website load karne ka function
+function loadCodeInPreview(code) {
+  currentRawCode = code;
+
+  // Placeholder chupao aur iframe dikhao
+  previewPlaceholder.style.display = 'none';
+  previewFrame.style.display = 'block';
+
+  // iframe ka content set karo — srcdoc use karenge
+  // Ye poora HTML as it is render karega with CSS aur sab kuch
+  previewFrame.srcdoc = code;
+
+  // iframe load hone ke baad height auto adjust karo
+  previewFrame.onload = function() {
+    try {
+      var iframeDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+      var bodyHeight = iframeDoc.body.scrollHeight;
+      var docHeight = iframeDoc.documentElement.scrollHeight;
+      var maxHeight = Math.max(bodyHeight, docHeight, 500);
+      // Maximum 3000px tak height do, uske baad scroll
+      previewFrame.style.height = Math.min(maxHeight + 50, 3000) + 'px';
+    } catch(e) {
+      previewFrame.style.height = '600px';
+    }
+  };
+}
+
+// LOAD BUTTON — Main load function
 loadBtn.addEventListener('click', function() {
   var rawCode = inputCode.value.trim();
+
   if (!rawCode) {
     showToast('Pehle HTML code paste karein!', 'warning');
     return;
   }
+
+  // iframe me poora code load karo — bina sanitize ke
+  // taake website bilkul original jaisi dikhe
+  loadCodeInPreview(rawCode);
+
+  // Edit mode ke liye sanitized version previewArea me bhi rakho
   var cleanCode = sanitizeHTML(rawCode);
   previewArea.innerHTML = cleanCode;
-  previewArea.setAttribute('contenteditable', 'true');
-  attachImageListeners();
-  previewArea.classList.add('loaded-success');
+
+  // Visual feedback
+  previewContainer.classList.add('loaded-success');
   setTimeout(function() {
-    previewArea.classList.remove('loaded-success');
+    previewContainer.classList.remove('loaded-success');
   }, 1500);
-  previewArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  showToast('Code successfully loaded! Ab text edit karein ya images badlein.', 'success');
+
+  // Scroll to preview
+  previewContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Edit mode off karo by default
+  isEditMode = false;
+  editModeBtn.textContent = '✏️ Edit Mode: OFF';
+  editModeBtn.classList.remove('edit-active');
+
+  // Save data
+  if (typeof saveAllData === 'function') {
+    setTimeout(saveAllData, 500);
+  }
+
+  showToast('Website successfully loaded! Poori website preview dekh sakte hain.', 'success');
+});
+
+// ============================================
+// RESPONSIVE VIEW BUTTONS
+// Desktop, Tablet, Mobile view switch karte hain
+// ============================================
+
+function setActiveViewBtn(activeBtn) {
+  desktopViewBtn.classList.remove('active');
+  tabletViewBtn.classList.remove('active');
+  mobileViewBtn.classList.remove('active');
+  activeBtn.classList.add('active');
+}
+
+desktopViewBtn.addEventListener('click', function() {
+  previewContainer.className = 'desktop-view';
+  if (previewContainer.classList.contains('loaded-success')) {
+    previewContainer.classList.add('loaded-success');
+  }
+  setActiveViewBtn(desktopViewBtn);
+  showToast('Desktop view activated', 'success');
+});
+
+tabletViewBtn.addEventListener('click', function() {
+  previewContainer.className = 'tablet-view';
+  setActiveViewBtn(tabletViewBtn);
+  showToast('Tablet view activated (768px)', 'success');
+});
+
+mobileViewBtn.addEventListener('click', function() {
+  previewContainer.className = 'mobile-view';
+  setActiveViewBtn(mobileViewBtn);
+  showToast('Mobile view activated (375px)', 'success');
+});
+
+// ============================================
+// EDIT MODE TOGGLE
+// Edit mode ON karne par iframe hide ho kar
+// editable preview area show hota hai
+// ============================================
+
+editModeBtn.addEventListener('click', function() {
+  // Check ke code load hua hai ya nahi
+  if (previewFrame.style.display === 'none' && previewArea.innerHTML === '') {
+    showToast('Pehle code load karein!', 'warning');
+    return;
+  }
+
+  isEditMode = !isEditMode;
+
+  if (isEditMode) {
+    // Edit mode ON — iframe chupao, editable area dikhao
+    previewFrame.style.display = 'none';
+    previewArea.style.display = 'block';
+    previewArea.setAttribute('contenteditable', 'true');
+    attachImageListeners();
+    editModeBtn.textContent = '✏️ Edit Mode: ON';
+    editModeBtn.classList.add('edit-active');
+    showToast('Edit Mode ON! Ab text click karke edit karein, images double-click karke badlein.', 'success');
+  } else {
+    // Edit mode OFF — iframe dikhao, editable area chupao
+    previewArea.style.display = 'none';
+    previewFrame.style.display = 'block';
+
+    // Updated content wapis iframe me load karo
+    var updatedContent = previewArea.innerHTML;
+    if (updatedContent) {
+      loadCodeInPreview(updatedContent);
+    }
+
+    editModeBtn.textContent = '✏️ Edit Mode: OFF';
+    editModeBtn.classList.remove('edit-active');
+    showToast('Edit Mode OFF! Preview mode active hai.', 'success');
+  }
 });
 
 /* ============================================
@@ -939,16 +1168,42 @@ loadBtn.addEventListener('click', function() {
    Preview area ka edited HTML code output me daalta hai
    ============================================ */
 extractBtn.addEventListener('click', function() {
-  var updatedHTML = previewArea.innerHTML;
-  if (!updatedHTML || previewArea.querySelector('.preview-placeholder')) {
+  var updatedHTML = '';
+
+  // Agar edit mode ON hai to previewArea se code lo
+  if (isEditMode && previewArea.style.display !== 'none') {
+    updatedHTML = previewArea.innerHTML;
+  }
+  // Agar edit mode OFF hai aur iframe me code hai
+  else if (previewFrame.style.display !== 'none') {
+    try {
+      var iframeDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+      updatedHTML = '<!DOCTYPE html>\n' + iframeDoc.documentElement.outerHTML;
+    } catch(e) {
+      updatedHTML = currentRawCode || '';
+    }
+  }
+  // Fallback
+  else {
+    updatedHTML = previewArea.innerHTML || currentRawCode || '';
+  }
+
+  if (!updatedHTML) {
     showToast('Pehle code load karein!', 'warning');
     return;
   }
+
   outputCode.value = updatedHTML;
   updateOutputCount();
   outputCode.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  if (typeof saveAllData === 'function') {
+    setTimeout(saveAllData, 500);
+  }
+
   showToast('Updated code extracted successfully!', 'success');
 });
+   
    /* ============================================
    COPY TO CLIPBOARD
    Output textarea ka code clipboard par copy karta hai
