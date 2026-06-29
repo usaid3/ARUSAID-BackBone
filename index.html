@@ -414,6 +414,103 @@ body {
 }
 
 /* ============================================
+   FILE UPLOAD AREA STYLES
+   ============================================ */
+.file-upload-area {
+  margin-bottom: 15px;
+}
+
+.file-upload-inner {
+  border: 2px dashed var(--light-blue);
+  border-radius: 12px;
+  padding: 30px 20px;
+  text-align: center;
+  background: var(--lighter-blue);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.file-upload-inner:hover {
+  border-color: #334DAF;
+  background: #d8ebff;
+}
+
+.file-upload-inner.drag-over {
+  border-color: #70960A;
+  background: #e8f5d0;
+  transform: scale(1.01);
+}
+
+.file-upload-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.file-upload-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #091F5C;
+  margin-bottom: 5px;
+}
+
+.file-upload-or {
+  font-size: 13px;
+  color: #999;
+  margin: 8px 0;
+}
+
+.btn-file-upload {
+  background: #334DAF;
+  color: white;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-block;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(51, 77, 175, 0.3);
+}
+
+.btn-file-upload:hover {
+  background: #091F5C;
+  box-shadow: 0 6px 15px rgba(9, 31, 92, 0.4);
+}
+
+.file-upload-info {
+  font-size: 12px;
+  color: #334DAF;
+  margin-top: 10px;
+  font-weight: 500;
+}
+
+.file-upload-info.file-loaded {
+  color: #70960A;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* Dark mode support for file upload */
+[data-theme="dark"] .file-upload-inner {
+  background: #121230;
+  border-color: #334DAF;
+}
+
+[data-theme="dark"] .file-upload-inner:hover {
+  background: #1a1a4e;
+}
+
+[data-theme="dark"] .file-upload-text {
+  color: #E8F2FE;
+}
+
+[data-theme="dark"] .file-upload-inner.drag-over {
+  background: #1a3a1a;
+  border-color: #70960A;
+}
+   
+/* ============================================
    FOOTER STYLES
    ============================================ */
 .footer {
@@ -543,8 +640,19 @@ body {
        ========================================== -->
   <div class="section-card">
     <h2 class="section-heading">📋 Paste Your HTML CSS JavaScript Code Here</h2>
-    <p class="sub-heading">Apni website ka complete single file code niche paste karein:</p>
-    <textarea
+    <p class="sub-heading">Apni website ka complete single file code niche paste karein ya file upload karein:</p>
+
+<!-- File Upload Area -->
+<div class="file-upload-area" id="fileUploadArea">
+  <div class="file-upload-inner" id="fileDropZone">
+    <div class="file-upload-icon">📁</div>
+    <p class="file-upload-text">index.html file yahan drag & drop karein</p>
+    <p class="file-upload-or">— ya —</p>
+    <label class="btn btn-file-upload" for="fileInput">📂 File Choose Karein</label>
+    <input type="file" id="fileInput" accept=".html,.htm,.txt" hidden>
+    <p class="file-upload-info" id="fileInfo">Supported: .html, .htm, .txt</p>
+  </div>
+</div>
       class="code-textarea"
       id="inputCode"
       placeholder="Apni website ka single file HTML/CSS/JS code yahan paste karein..."
@@ -672,6 +780,115 @@ function sanitizeHTML(code) {
   code = code.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
   return code;
 }
+
+   /* ============================================
+   FILE UPLOAD FEATURE
+   User apne device se index.html file upload
+   kar sakta hai — drag drop bhi support hai
+   ============================================ */
+
+var fileInput = document.getElementById('fileInput');
+var fileDropZone = document.getElementById('fileDropZone');
+var fileInfo = document.getElementById('fileInfo');
+
+// File read karne ka common function
+function readUploadedFile(file) {
+  // Check ke file html ya text ho
+  var fileName = file.name.toLowerCase();
+  if (fileName.indexOf('.html') === -1 && fileName.indexOf('.htm') === -1 && fileName.indexOf('.txt') === -1) {
+    showToast('Sirf .html, .htm ya .txt files allowed hain!', 'warning');
+    return;
+  }
+
+  // File size check — 5MB se zyada na ho
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('File bohot badi hai! Maximum 5MB allowed hai.', 'warning');
+    return;
+  }
+
+  // FileReader se file ka content read karo
+  var reader = new FileReader();
+
+  reader.onload = function(e) {
+    var fileContent = e.target.result;
+
+    // Input textarea me file ka code daal do
+    inputCode.value = fileContent;
+
+    // Count update karo
+    updateCount(inputCode, inputCount);
+
+    // File info update karo
+    fileInfo.textContent = 'File loaded: ' + file.name + ' (' + formatFileSize(file.size) + ')';
+    fileInfo.classList.add('file-loaded');
+
+    // Auto save karo
+    if (typeof saveAllData === 'function') {
+      saveAllData();
+    }
+
+    showToast('File "' + file.name + '" successfully load ho gayi!', 'success');
+
+    // Input textarea tak scroll karo
+    inputCode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  reader.onerror = function() {
+    showToast('File read karne me error aaya!', 'warning');
+  };
+
+  // File ko text ke roop me read karo
+  reader.readAsText(file);
+}
+
+// File size ko readable format me convert karo
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// Browse button se file select karne par
+fileInput.addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (file) {
+    readUploadedFile(file);
+  }
+  // Reset karo taake same file dobara select ho sake
+  fileInput.value = '';
+});
+
+// Drag & Drop — file ko drag kar ke box par chhodo
+fileDropZone.addEventListener('dragover', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  fileDropZone.classList.add('drag-over');
+});
+
+fileDropZone.addEventListener('dragleave', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  fileDropZone.classList.remove('drag-over');
+});
+
+fileDropZone.addEventListener('drop', function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  fileDropZone.classList.remove('drag-over');
+
+  var files = e.dataTransfer.files;
+  if (files.length > 0) {
+    readUploadedFile(files[0]);
+  }
+});
+
+// Drop zone par click kare to bhi file chooser khule
+fileDropZone.addEventListener('click', function(e) {
+  if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') {
+    fileInput.click();
+  }
+});
+   
    /* ============================================
    IMAGES PAR DOUBLE-CLICK EVENT
    Har image par click se URL change hota hai
